@@ -19,7 +19,7 @@ import java.io.IOException;
 
 @SpringBootApplication
 @Controller
-@Api(value = "index", description = "资源相关api")
+@Api(value = "index", description = "所有api说明", tags = "index")
 public class ResourceSeoreApplication extends SpringBootServletInitializer {
 
     public static void main(String[] args) {
@@ -33,53 +33,67 @@ public class ResourceSeoreApplication extends SpringBootServletInitializer {
     }
 
 
-    @RequestMapping(value = "/updateFile", method = RequestMethod.POST)
+    @RequestMapping(value = "/uploadFile", method = RequestMethod.POST)
     @ApiOperation(value = "上传文件资源")
     @ResponseBody
     @ApiImplicitParams(value = {
-            @ApiImplicitParam(name = "fileName", value = "book's name", required = true),
-            @ApiImplicitParam(name = "file", value = "book's date", required = false)})
-    public String test(String fileName,
-                       @RequestParam("file") MultipartFile file,
-                       HttpServletRequest request) {
-        String path = ImageTools.getAppPath(request), serverPath = "";
+            @ApiImplicitParam(name = "fileName", value = "文件名称，用于确认保存的文件名称及文件类型", required = true),
+            @ApiImplicitParam(name = "file", type = "MultipartFile", dataType = "MultipartFile",
+                    value = "保存的文件，MultipartFile 作为接收参数", required = true)})
+    public String uploadFile(String fileName,
+                             @RequestParam("file") MultipartFile file,
+                             HttpServletRequest request) {
+        PathInfo pathInfo = getPath(request, fileName);
+        String path = pathInfo.storePath;
+        try {
+            FileTools.byte2file(file.getBytes(), path);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        return pathInfo.returnPath;
+    }
 
+    private class PathInfo {
+        String storePath;
+        String returnPath;
+
+        public PathInfo(String storePath, String returnPath) {
+            this.storePath = storePath;
+            this.returnPath = returnPath;
+        }
+    }
+
+    private PathInfo getPath(HttpServletRequest request, String fileName) {
+        String path = FileTools.getAppPath(request), serverPath = "";
+
+        String suffix = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
+        serverPath = suffix + "/";
         for (int i = 0; i < 3; i++) {
             serverPath = serverPath + CreateBasicData.getRandomString(3);
             serverPath += "/";
         }
         File m = new File(path + serverPath);
-        System.out.println(path + serverPath);
         if (!m.exists()) {
             m.mkdirs();
         }
-        serverPath += fileName;
-        try {
-            System.out.println(path + serverPath);
-            ImageTools.byte2file(file.getBytes(), path + serverPath);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return serverPath;
+
+        return new PathInfo(path + serverPath + fileName, serverPath + fileName);
     }
 
-
-    @RequestMapping(value = "/updateFile4fileName", method = RequestMethod.POST)
-    @ApiOperation(value = "上传文件资源")
-    @ApiParam()
+    @RequestMapping(value = "/uploadFile4fileName", method = RequestMethod.POST)
+    @ApiOperation(value = "上传文件资源,通过文件路径上传")
     @ResponseBody
-    public String test1(String fileName, String imgPath, HttpServletRequest request) {
-        String path = ImageTools.getAppPath(request), serverPath = "";
-        for (int i = 0; i < 3; i++) {
-            serverPath = serverPath + CreateBasicData.getRandomString(i);
-            serverPath += "/";
-        }
+    @ApiImplicitParams(value = {
+            @ApiImplicitParam(name = "fileName", value = "文件名称，用于确认保存的文件名称及文件类型", required = true),
+            @ApiImplicitParam(name = "filePath", value = "保存的文件，String 传输被保存资源的路径", required = true)})
+    public String test1(String fileName, String filePath, HttpServletRequest request) {
+        PathInfo pathInfo = getPath(request, fileName);
         try {
-            DownloadImg.download(imgPath, path + serverPath + fileName, path + serverPath);
+            FileTools.download(filePath, pathInfo.storePath);
         } catch (Exception e) {
             e.printStackTrace();
         }
-        return serverPath + fileName;
+        return pathInfo.returnPath;
     }
 
     @RequestMapping("/")

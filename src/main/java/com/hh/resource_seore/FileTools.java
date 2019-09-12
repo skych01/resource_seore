@@ -4,12 +4,12 @@ package com.hh.resource_seore;
 import javax.servlet.http.HttpServletRequest;
 import java.awt.image.BufferedImage;
 import java.io.*;
-import java.net.URLEncoder;
+import java.net.*;
 import java.util.Arrays;
 import java.util.Date;
 
 
-public class ImageTools {
+public class FileTools {
 
     /**
      * 获取图片宽度
@@ -81,8 +81,6 @@ public class ImageTools {
      * @param name
      * @return
      */
-
-
     public static boolean isPicture(String name) {
         return name.endsWith(".jpg") || name.endsWith(".jpeg") || name.endsWith(".png") || name.endsWith(".gif");
     }
@@ -115,8 +113,6 @@ public class ImageTools {
      * @return
      * @throws IOException
      */
-
-
     public static String dispatchInfoImg(String id, String fileName, String serviceType, Date uploadTime, byte[] b, String domain,
                                          HttpServletRequest request) throws IOException {
         String filePath = "";
@@ -165,13 +161,7 @@ public class ImageTools {
 //        return new byte[input.available()];
     }
 
-
-    public static void main(String[] args) throws IOException {
-        File file = new File("C:\\Users\\陈鸿\\Desktop\\平台问题总结.docx");
-        System.out.println(Arrays.toString(file2byte(file)));
-    }
-
-    public static File byte2file(byte[] bytes,String fileName) throws IOException {
+    public static File byte2file(byte[] bytes, String fileName) throws IOException {
         File file = new File(fileName);
         OutputStream output = new FileOutputStream(file);
         BufferedOutputStream bufferedOutput = new BufferedOutputStream(output);
@@ -181,5 +171,22 @@ public class ImageTools {
         return file;
     }
 
+    public static void download(String url, String filePath) throws Exception {
 
+        File file = new File(filePath);
+        CookieHandler.setDefault(new CookieManager(null, CookiePolicy.ACCEPT_ALL));
+        URL url1 = new URL(url);
+        URLConnection con = url1.openConnection();
+        InputStream is = con.getInputStream();
+
+
+        byte[] bs = new byte[1024];
+        int len;
+        OutputStream os = new FileOutputStream(file);
+        while ((len = is.read(bs)) != -1) {
+            os.write(bs, 0, len);
+        }
+        os.close();
+        is.close();
+    }
 }
