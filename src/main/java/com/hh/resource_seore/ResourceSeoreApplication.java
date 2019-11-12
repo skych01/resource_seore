@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.stereotype.Controller;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,8 +43,14 @@ public class ResourceSeoreApplication extends SpringBootServletInitializer {
                     value = "保存的文件，MultipartFile 作为接收参数", required = true)})
     public String uploadFile(String fileName,
                              @RequestParam("file") MultipartFile file,
+                             String project,
                              HttpServletRequest request) {
-        PathInfo pathInfo = getPath(request, fileName);
+        PathInfo pathInfo;
+        if (StringUtils.isEmpty(project)) {
+            pathInfo = getPath(request, fileName);
+        } else {
+            pathInfo = getPath(request, fileName, project);
+        }
         String path = pathInfo.storePath;
         try {
             FileTools.byte2file(file.getBytes(), path);
@@ -63,11 +70,17 @@ public class ResourceSeoreApplication extends SpringBootServletInitializer {
         }
     }
 
+    private String defaultProject = "default";
+
     private PathInfo getPath(HttpServletRequest request, String fileName) {
+        return getPath(request, fileName, defaultProject);
+    }
+
+    private PathInfo getPath(HttpServletRequest request, String fileName, String project) {
         String path = FileTools.getAppPath(request), serverPath = "";
 
         String suffix = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
-        serverPath = suffix + "/";
+        serverPath = project + "/" + suffix + "/";
         for (int i = 0; i < 3; i++) {
             serverPath = serverPath + CreateBasicData.getRandomString(3);
             serverPath += "/";
