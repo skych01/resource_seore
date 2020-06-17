@@ -1,4 +1,4 @@
-package com.hh.resource_seore;
+package com.hh.resource_seore.config;
 
 import io.swagger.annotations.ApiOperation;
 import org.springframework.boot.context.properties.ConfigurationProperties;

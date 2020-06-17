@@ -1,4 +1,4 @@
-package com.hh.resource_seore;
+package com.hh.resource_seore.util;
 
 
 import java.util.*;

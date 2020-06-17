@@ -1,5 +1,7 @@
 package com.hh.resource_seore;
 
+import com.hh.resource_seore.common.CommonObject;
+import com.hh.resource_seore.service.PathHandleService;
 import com.hh.resource_seore.setting.RemoteProperties;
 import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
@@ -10,6 +12,10 @@ import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
@@ -18,7 +24,9 @@ import org.springframework.web.multipart.MultipartFile;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.util.*;
 
 @SpringBootApplication
@@ -36,119 +44,8 @@ public class ResourceSeoreApplication extends SpringBootServletInitializer {
         return builder.sources(ResourceSeoreApplication.class);
     }
 
-
-    @RequestMapping(value = "/uploadFile")
-    @ApiOperation(value = "上传文件资源")
-    @ResponseBody
-    @ApiImplicitParams(value = {
-            @ApiImplicitParam(name = "fileName", value = "文件名称，用于确认保存的文件名称及文件类型", required = true),
-            @ApiImplicitParam(name = "file", type = "MultipartFile", dataType = "MultipartFile",
-                    value = "保存的文件，MultipartFile 作为接收参数", required = true)})
-    public String uploadFile(String fileName,
-                             @RequestParam("file") MultipartFile file,
-                             String project,
-                             HttpServletRequest request) {
-        PathInfo pathInfo;
-        if (StringUtils.isEmpty(project)) {
-            pathInfo = getPath(request, fileName);
-        } else {
-            pathInfo = getPath(request, fileName, project);
-        }
-        String path = pathInfo.storePath;
-        try {
-            FileTools.byte2file(file.getBytes(), path);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return pathInfo.returnPath;
-    }
-
-    private class PathInfo extends HashMap<String, Map> {
-        String storePath;
-        String returnPath;
-        //是否是目录 如果是目录就相当于是普通的map 否则，记录文件信息
-        boolean isDirectory;
-
-        public String getStorePath() {
-            return storePath;
-        }
-
-        public void setStorePath(String storePath) {
-            this.storePath = storePath;
-        }
-
-        public String getReturnPath() {
-            return returnPath;
-        }
-
-        public void setReturnPath(String returnPath) {
-            this.returnPath = returnPath;
-        }
-
-        public PathInfo(String storePath, String returnPath) {
-            this(storePath, returnPath, false);
-        }
-
-        public PathInfo() {
-            this.isDirectory = true;
-        }
-
-        private PathInfo(String storePath, String returnPath, boolean isDirectory) {
-            this.returnPath = returnPath;
-            this.storePath = storePath;
-            this.isDirectory = isDirectory;
-        }
-
-        @Override
-        public String toString() {
-            if (!this.isDirectory) {
-                return this.returnPath;
-            }
-            return super.toString();
-        }
-    }
-
-
-    private String defaultProject = "default";
-
-    private PathInfo getPath(HttpServletRequest request, String fileName) {
-        return getPath(request, fileName, defaultProject);
-    }
-
-    private PathInfo getPath(HttpServletRequest request, String fileName, String project) {
-        String path = FileTools.getAppPath(request), serverPath = "";
-
-        String suffix = fileName.substring(fileName.lastIndexOf(".") + 1, fileName.length());
-        serverPath = project + "/" + suffix + "/";
-        for (int i = 0; i < 3; i++) {
-            serverPath = serverPath + CreateBasicData.getRandomString(3);
-            serverPath += "/";
-        }
-        File m = new File(path + serverPath);
-        if (!m.exists()) {
-            m.mkdirs();
-        }
-
-        return new PathInfo(path + serverPath + fileName, serverPath + fileName);
-    }
-
-    @RequestMapping(value = "/uploadFile4fileName", method = RequestMethod.POST)
-    @ApiOperation(value = "上传文件资源,通过文件路径上传")
-    @ResponseBody
-    @ApiImplicitParams(value = {
-            @ApiImplicitParam(name = "fileName", value = "文件名称，用于确认保存的文件名称及文件类型",
-                    required = true),
-            @ApiImplicitParam(name = "filePath", value = "保存的文件，String 传输被保存资源的路径",
-                    required = true)})
-    public String test1(String fileName, String filePath, HttpServletRequest request) {
-        PathInfo pathInfo = getPath(request, fileName);
-        try {
-            FileTools.download(filePath, pathInfo.storePath);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
-        return pathInfo.returnPath;
-    }
+    @Autowired
+    private RemoteProperties getRemoteProperties;
 
     @RequestMapping("/")
     public void index(HttpServletResponse response) {
@@ -159,59 +56,59 @@ public class ResourceSeoreApplication extends SpringBootServletInitializer {
     @Autowired
     private RemoteProperties remoteProperties;
 
-    private Set<String> list = new HashSet<>();
 
-    @RequestMapping(value = "/test")
+    @Autowired
+    private PathHandleService pathHandleService;
+
+    @RequestMapping(value = "/upload")
     @ResponseBody
-    public PathInfo test(@RequestParam("file") MultipartFile file) throws IOException {
-        return storage(file.getBytes(), "test", file.getOriginalFilename());
+    @ApiOperation(value = "上传文件资源")
+    @ApiImplicitParams(value = {
+            @ApiImplicitParam(name = "project", value = "项目名称，用于区分不同项目", required = false),
+            @ApiImplicitParam(name = "file", type = "MultipartFile", dataType = "MultipartFile",
+                    value = "保存的文件，MultipartFile 作为接收参数", required = true)})
+    public String upload(@RequestParam("file") MultipartFile file,
+                       @RequestParam(required = false) String project) {
+        try {
+            return pathHandleService.storage(file.getBytes(), project, file.getOriginalFilename().toString());
+        } catch (IOException e) {
+            e.printStackTrace();
+            return null;
+        }
     }
 
-    @RequestMapping(value = "/test1")
-    @ResponseBody
-    public PathInfo test1() throws IOException {
-        return this.fileTree;
+    @ApiOperation(value = "下载文件，根据返回路径下载资源")
+    @RequestMapping(value = "/{code}")
+    public ResponseEntity<FileSystemResource> get(@PathVariable("code") String code) throws IOException {
+        return export(pathHandleService.out(code));
     }
 
-    private PathInfo fileTree = new PathInfo();
+    @ApiOperation(value = "查询文档结构")
+    @RequestMapping(value = "/query")
+    @ResponseBody
+    public Map get() throws IOException {
+        return CommonObject.getFiles();
+    }
 
-    private PathInfo storage(byte[] file, String project, String fileName) throws IOException {
-        StringBuilder filepath = new StringBuilder(), //文件真实存放地址
-                treePath = new StringBuilder();// api访问地址，也是文件树里面的路径
-        filepath.append(remoteProperties.getPath()).append("/").append(project);
 
-        treePath.append("/").append(project);
-        Date today = new Date();
 
-        filepath.append("/").append(today.getYear());
-        treePath.append("/").append(today.getYear()).append("-").append(today.getMonth())
-                .append("/").append(today.getDay());
-
-        filepath.append("/").append(today.getMonth());
-        filepath.append("/").append(today.getDay());
-
-        File file1 = new File(filepath.toString());
-        if (!file1.exists()) {
-            file1.mkdirs();
+    private ResponseEntity<FileSystemResource> export(File file) {
+        if (file == null) {
+            return null;
         }
-        treePath.append("/").append(CreateBasicData.getRandomString(12));
-        PathInfo pathInfo = new PathInfo(filepath.toString(), treePath.toString());
-        String[] tier = treePath.toString().trim().split("/");
-        Map<String, Map> tierMap1 = this.fileTree;
-        for (int i = 1; i < tier.length - 1; i++) {
-            Map tierMap = tierMap1.get(tier[i]);
-            if (tierMap == null) {
-                tierMap = new HashMap<>();
-            }
-            tierMap1.put(tier[i], tierMap);
-            tierMap1 = tierMap;
-        }
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
+        headers.add("Content-Disposition", "attachment; filename=" +file.getName());
+        headers.add("Pragma", "no-cache");
+        headers.add("Expires", "0");
+        headers.add("Last-Modified", new Date().toString());
+        headers.add("ETag", String.valueOf(System.currentTimeMillis()));
 
-        tierMap1.put(fileName, pathInfo);
-
-
-        FileTools.byte2file(file, filepath.append("/").append(fileName).toString());
-        System.out.println(pathInfo);
-        return pathInfo;
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentLength(file.length())
+                .contentType(MediaType.parseMediaType("application/octet-stream"))
+                .body(new FileSystemResource(file));
     }
 }
