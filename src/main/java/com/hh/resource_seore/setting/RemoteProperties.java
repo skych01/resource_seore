@@ -15,6 +15,7 @@ import java.util.GregorianCalendar;
 //@Component
 public class RemoteProperties {
   private String path;
+  private boolean redis;
 
   public String getPath() {
     return path;
@@ -24,6 +25,13 @@ public class RemoteProperties {
     this.path = path;
   }
 
+  public boolean isRedis() {
+    return redis;
+  }
+
+  public void setRedis(boolean redis) {
+    this.redis = redis;
+  }
 
   public static void main(String[] args) {
     Calendar calendar = new GregorianCalendar();

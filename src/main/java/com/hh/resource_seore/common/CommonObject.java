@@ -9,13 +9,8 @@ import java.util.Map;
  */
 public class CommonObject {
 
-    private static PathInfo fileTree = new PathInfo();
 
     private static Map<String, String> files = new HashMap<>();
-
-    public static PathInfo getFileTree() {
-        return fileTree;
-    }
 
     public static Map<String, String> getFiles() {
         return files;

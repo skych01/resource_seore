@@ -31,9 +31,9 @@ public class PathHashHandle implements PathHandleService {
     public String storage(byte[] file, String project, String fileName) throws IOException {
 
         String treePath = CreateBasicData.getRandomString(12);// api访问地址，也是文件树里面的路径
-        String filepath = filePathRule(project,fileName);//文件路径
+        String filepath = filePathRule(project, fileName);//文件路径
 
-        fileStorage(filepath,fileName,file);
+        fileStorage(remoteProperties.getPath() + "/" + filepath, fileName, file);
 
         Map<String, String> map = CommonObject.getFiles();//从全局获取hash表
         if (map.get(treePath) != null) {
@@ -50,14 +50,14 @@ public class PathHashHandle implements PathHandleService {
         if (path == null) {
             return null;
         }
-       return new File(path);
+        return new File(remoteProperties.getPath() + "/" + path);
 
     }
 
     /**
      * 文件存储至本地
      */
-    private void fileStorage(String filepath,String fileName, byte[] file) throws IOException {
+    private void fileStorage(String filepath, String fileName, byte[] file) throws IOException {
         File file1 = new File(filepath.toString());
         if (!file1.exists()) {
             file1.mkdirs();
@@ -73,7 +73,9 @@ public class PathHashHandle implements PathHandleService {
         if (project == null) {
             project = this.DEFAULT_PROJECT;
         }
-        filepath.append(remoteProperties.getPath()).append("/").append(project);
+//        filepath.append(remoteProperties.getPath()).append("/").append(project);
+        filepath.append(project);
+
         Calendar today = new GregorianCalendar();
         String type = fileName.split("\\.")[1];
         filepath.append("/").append(type);
