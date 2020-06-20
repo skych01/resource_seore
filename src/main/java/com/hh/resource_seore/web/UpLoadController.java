@@ -3,6 +3,7 @@ package com.hh.resource_seore.web;
 import com.hh.resource_seore.common.CommonObject;
 import com.hh.resource_seore.service.PathHandleService;
 import com.hh.resource_seore.setting.RemoteProperties;
+import io.swagger.annotations.Api;
 import io.swagger.annotations.ApiImplicitParam;
 import io.swagger.annotations.ApiImplicitParams;
 import io.swagger.annotations.ApiOperation;
@@ -11,6 +12,7 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -21,6 +23,8 @@ import java.util.Date;
 import java.util.Map;
 
 @RestController
+@Controller
+@Api(value = "index", description = "所有api说明", tags = "index")
 public class UpLoadController {
 
 

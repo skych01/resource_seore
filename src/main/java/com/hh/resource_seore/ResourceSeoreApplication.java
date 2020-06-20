@@ -28,8 +28,6 @@ import java.io.*;
 import java.util.*;
 
 @SpringBootApplication
-@Controller
-@Api(value = "index", description = "所有api说明", tags = "index")
 public class ResourceSeoreApplication{
 
     public static void main(String[] args) {
@@ -52,9 +50,14 @@ public class ResourceSeoreApplication{
      * @throws IOException
      */
     @PostConstruct
-    private void initFile() throws IOException {
+    private void initFile()  {
         Properties pps = new Properties();
-        pps.load(new FileInputStream(remoteProperties.getPath() + "/file.properties"));
+        try {
+            pps.load(new FileInputStream(remoteProperties.getPath() + "/file.properties"));
+        } catch (IOException e) {
+            e.printStackTrace();
+            return;
+        }
         Enumeration enum1 = pps.propertyNames();//得到配置文件的名字
         Map map = CommonObject.getFiles();
         while (enum1.hasMoreElements()) {
