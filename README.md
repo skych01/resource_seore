@@ -37,3 +37,31 @@ environment.path= D:\\resource
 ## 3.持久化
 
 项目关闭之后资源以及资源信息并不会丢失，重新启动后访问 /query 发现资源信息依然存在，是因为提供了持久化的机制，在每次启动服务后会进行加载，如果项目需要转移，比如从开发环境转移到生产环境，只需要转移配置的仓库目录。
+
+
+## 4.示例
+java代码示例：
+
+```
+    public String store(File file) {
+        RestTemplate restTemplate = new RestTemplate();
+
+        //设置请求头
+        HttpHeaders headers = new HttpHeaders();
+        MediaType type = MediaType.parseMediaType("multipart/form-data");
+        headers.setContentType(type);
+
+        //设置请求体，注意是LinkedMultiValueMap
+        FileSystemResource fileSystemResource = new FileSystemResource(file);
+        MultiValueMap<String, Object> form = new LinkedMultiValueMap<>();
+        form.add("file", fileSystemResource);
+        form.add("project", "ftj");
+
+        //用HttpEntity封装整个请求报文
+        HttpEntity<MultiValueMap<String, Object>> files = new HttpEntity<>(form, headers);
+
+        String s = restTemplate.postForObject(apiProperties.getFileStoreUrl() + "/upload", files, String.class);
+        return s;
+    }
+```
+
