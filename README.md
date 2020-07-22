@@ -40,7 +40,7 @@ environment.path= D:\\resource
 
 
 ## 4.示例
-java代码示例：
+java代码示例：（最后返回结果就是请求路径）
 
 ```
     public String store(File file) {
